@@ -9,9 +9,9 @@ package ca.uhn.fhir.parser;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,6 +24,8 @@ import ca.uhn.fhir.context.*;
 import ca.uhn.fhir.context.BaseRuntimeElementDefinition.ChildTypeEnum;
 import ca.uhn.fhir.model.api.*;
 import ca.uhn.fhir.model.api.annotation.Child;
+import ca.uhn.fhir.model.api.annotation.DatatypeDef;
+import ca.uhn.fhir.model.api.annotation.ResourceDef;
 import ca.uhn.fhir.model.base.composite.BaseCodingDt;
 import ca.uhn.fhir.model.base.composite.BaseContainedDt;
 import ca.uhn.fhir.model.primitive.IdDt;
@@ -44,6 +46,7 @@ import org.hl7.fhir.instance.model.api.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -334,6 +337,8 @@ public class JsonParser extends BaseParser implements IJsonLikeParser {
 			}
 		}
 
+		Map<String, Child> parentProfileElementMetadata = getParentProfileElementMetadata(theElement);
+
 		boolean haveWrittenExtensions = false;
 		for (CompositeChildElement nextChildElem : super.compositeChildIterator(theElement, theContainedResource, theParent, theEncodeContext)) {
 
@@ -455,7 +460,8 @@ public class JsonParser extends BaseParser implements IJsonLikeParser {
 					if (inArray) {
 						theEventWriter.endArray();
 					}
-					if (nextChild.getMax() > 1 || nextChild.getMax() == Child.MAX_UNLIMITED) {
+					Child parentElementChildAnnotation = parentProfileElementMetadata.get(nextChild.getElementName());
+					if (isMultipleCardinality(nextChild.getMax()) || (parentElementChildAnnotation != null && isMultipleCardinality(parentElementChildAnnotation.max()))) {
 						beginArray(theEventWriter, childName);
 						inArray = true;
 						encodeChildElementToStreamWriter(theResDef, theResource, theEventWriter, nextValue, childDef, null, theContainedResource, nextChildElem, force, theEncodeContext);
@@ -546,6 +552,24 @@ public class JsonParser extends BaseParser implements IJsonLikeParser {
 				}
 			}
 		}
+	}
+
+	private boolean isMultipleCardinality(int maxCardinality) {
+		return maxCardinality > 1 || maxCardinality == Child.MAX_UNLIMITED;
+	}
+
+	private Map<String, Child> getParentProfileElementMetadata(IBase theElement) {
+		Class<?> superclass = theElement.getClass().getSuperclass();
+		Map<String, Child> parentProfileElementsMetadata = new HashMap<>();
+		if(superclass.isAnnotationPresent(ResourceDef.class) || superclass.isAnnotationPresent(DatatypeDef.class)) {
+			for (Field field: superclass.getDeclaredFields()) {
+				Child childAnnotation = field.getAnnotation(Child.class);
+				if(childAnnotation != null) {
+					parentProfileElementsMetadata.put(childAnnotation.name(), childAnnotation);
+				}
+			}
+		}
+		return parentProfileElementsMetadata;
 	}
 
 	private void encodeCompositeElementToStreamWriter(RuntimeResourceDefinition theResDef, IBaseResource theResource, IBase theNextValue, JsonLikeWriter theEventWriter, boolean theContainedResource, 																	  CompositeChildElement theParent, EncodeContext theEncodeContext) throws IOException, DataFormatException {

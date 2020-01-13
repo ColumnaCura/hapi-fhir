@@ -29,8 +29,8 @@
 			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 		</snapshotRepository>
 		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+			<id>nexus</id>
+			<url>http://nexus/content/repositories/CURA_3RD_PARTY/</url>
 		</repository>
 		<site>
 			<id>git.server</id>

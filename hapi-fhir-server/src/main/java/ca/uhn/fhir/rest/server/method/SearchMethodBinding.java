@@ -234,7 +234,7 @@ public class SearchMethodBinding extends BaseResourceReturningMethodBinding {
 			}
 		}
 		for (String next : theRequest.getParameters().keySet()) {
-			if (next.startsWith("_") && !SPECIAL_SEARCH_PARAMS.contains(next)) {
+			if (next.startsWith("_") && !SPECIAL_SEARCH_PARAMS.contains(truncModifierPart(next))) {
 				methodParamsTemp.add(next);
 			}
 		}
@@ -252,6 +252,13 @@ public class SearchMethodBinding extends BaseResourceReturningMethodBinding {
 		return true;
 	}
 
+	private String truncModifierPart(String param) {
+		int indexOfSeparator = param.indexOf(":");
+		if (indexOfSeparator != -1) {
+			return param.substring(0, indexOfSeparator);
+		}
+		return param;
+	}
 
 	@Override
 	public IBundleProvider invokeServer(IRestfulServer<?> theServer, RequestDetails theRequest, Object[] theMethodParams) throws InvalidRequestException, InternalErrorException {

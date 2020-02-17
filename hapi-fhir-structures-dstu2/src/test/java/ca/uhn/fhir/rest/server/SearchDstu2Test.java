@@ -401,6 +401,70 @@ public class SearchDstu2Test {
 		assertEquals("Patient", ourLastRef.getResourceType());
 	}
 
+	/**
+	 * Verifies proper method binding to handle special search names(_id:[modifier], _language:[modifier])
+	 */
+	@Test
+	public void testSearchByIdExact() throws Exception {
+		HttpGet httpGet = new HttpGet("http://localhost:" + ourPort + "/Patient?_id:exact=aaa&reference=value");
+		HttpResponse status = ourClient.execute(httpGet);
+		String responseContent = IOUtils.toString(status.getEntity().getContent(), Charset.defaultCharset());
+		IOUtils.closeQuietly(status.getEntity().getContent());
+		ourLog.info(responseContent);
+		assertEquals(200, status.getStatusLine().getStatusCode());
+
+		assertEquals("idProvider", ourLastMethod);
+	}
+
+	@Test
+	public void testSearchByQualifiedIdQualifiedString() throws Exception {
+		HttpGet httpGet = new HttpGet("http://localhost:" + ourPort + "/Patient?_id:exact=aaa&stringParam:exact=value");
+		HttpResponse status = ourClient.execute(httpGet);
+		String responseContent = IOUtils.toString(status.getEntity().getContent(), Charset.defaultCharset());
+		IOUtils.closeQuietly(status.getEntity().getContent());
+		ourLog.info(responseContent);
+		assertEquals(200, status.getStatusLine().getStatusCode());
+
+		assertEquals("stringParam:true:true", ourLastMethod);
+	}
+
+	@Test
+	public void testSearchByQualifiedString() throws Exception {
+		HttpGet httpGet = new HttpGet("http://localhost:" + ourPort + "/Patient?_id=aaa&stringParam:exact=value");
+		HttpResponse status = ourClient.execute(httpGet);
+		String responseContent = IOUtils.toString(status.getEntity().getContent(), Charset.defaultCharset());
+		IOUtils.closeQuietly(status.getEntity().getContent());
+		ourLog.info(responseContent);
+		assertEquals(200, status.getStatusLine().getStatusCode());
+
+		assertEquals("stringParam:false:true", ourLastMethod);
+	}
+
+	@Test
+	public void testSearchByQualifiedIdString() throws Exception {
+		HttpGet httpGet = new HttpGet("http://localhost:" + ourPort + "/Patient?_id:exact=aaa&stringParam=value");
+		HttpResponse status = ourClient.execute(httpGet);
+		String responseContent = IOUtils.toString(status.getEntity().getContent(), Charset.defaultCharset());
+		IOUtils.closeQuietly(status.getEntity().getContent());
+		ourLog.info(responseContent);
+		assertEquals(200, status.getStatusLine().getStatusCode());
+
+		assertEquals("stringParam:true:false", ourLastMethod);
+	}
+
+	@Test
+	public void testSearchByIdString() throws Exception {
+		HttpGet httpGet = new HttpGet("http://localhost:" + ourPort + "/Patient?_id=aaa&stringParam=value");
+		HttpResponse status = ourClient.execute(httpGet);
+		String responseContent = IOUtils.toString(status.getEntity().getContent(), Charset.defaultCharset());
+		IOUtils.closeQuietly(status.getEntity().getContent());
+		ourLog.info(responseContent);
+		assertEquals(200, status.getStatusLine().getStatusCode());
+
+		assertEquals("stringParam:false:false", ourLastMethod);
+	}
+
+
 	@Test
 	public void testSearchWhitelist01Failing() throws Exception {
 		HttpGet httpGet = new HttpGet("http://localhost:" + ourPort + "/Patient?_query=searchWhitelist01&ref=value");
@@ -458,13 +522,14 @@ public class SearchDstu2Test {
 		ourServer = new Server(ourPort);
 
 		DummyPatientResourceProvider patientProvider = new DummyPatientResourceProvider();
+		DummyPatientResourceNoIdProvider patientResourceNoIdProviderProvider = new DummyPatientResourceNoIdProvider();
 		DummyPatientResourceMethodBindingIssueProvider patientResourceMethodBindingIssueProvider = new DummyPatientResourceMethodBindingIssueProvider();
 
 		ServletHandler proxyHandler = new ServletHandler();
 		ourServlet = new RestfulServer(ourCtx);
 		ourServlet.setPagingProvider(new FifoMemoryPagingProvider(10));
 
-		ourServlet.setResourceProviders(patientProvider, patientResourceMethodBindingIssueProvider);
+		ourServlet.setResourceProviders(patientResourceNoIdProviderProvider, patientProvider, patientResourceMethodBindingIssueProvider);
 		ServletHolder servletHolder = new ServletHolder(ourServlet);
 		proxyHandler.addServletWithMapping(servletHolder, "/*");
 		ourServer.setHandler(proxyHandler);
@@ -475,6 +540,23 @@ public class SearchDstu2Test {
 		builder.setConnectionManager(connectionManager);
 		ourClient = builder.build();
 
+	}
+
+	public static class DummyPatientResourceNoIdProvider implements IResourceProvider {
+
+		@Override
+		public Class<? extends IResource> getResourceType() {
+			return Patient.class;
+		}
+
+		//@formatter:off
+		@Search()
+		public List<Patient> searchByRef(
+			@RequiredParam(name = "reference") ReferenceParam theParam) {
+			ourLastMethod = "noIdProvider";
+			return Collections.emptyList();
+		}
+		//@formatter:on
 	}
 
 	public static class DummyPatientResourceMethodBindingIssueProvider implements IResourceProvider {
@@ -538,7 +620,27 @@ public class SearchDstu2Test {
 		public MethodOutcome create(@ResourceParam Patient thePatient) {
 			throw new UnsupportedOperationException();
 		}
-		
+
+		//@formatter:off
+		@Search()
+		public List<Patient> searchByIdRef(
+			@RequiredParam(name="_id") StringParam id,
+			@OptionalParam(name = "reference") ReferenceParam theParam) {
+			ourLastMethod = "idProvider";
+			return Collections.emptyList();
+		}
+		//@formatter:on
+
+		//@formatter:off
+		@Search()
+		public List<Patient> searchByQualifiedString(
+			@RequiredParam(name="_id") StringParam id,
+			@RequiredParam(name = "stringParam") StringParam stringParam) {
+			ourLastMethod = "stringParam:" + id.isExact() + ":" + stringParam.isExact();
+			return Collections.emptyList();
+		}
+		//@formatter:on
+
 		//@formatter:off
 		@Search()
 		public List<Patient> searchDateAndList(

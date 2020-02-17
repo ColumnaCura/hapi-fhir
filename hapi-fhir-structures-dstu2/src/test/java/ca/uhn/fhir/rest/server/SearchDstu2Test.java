@@ -524,12 +524,13 @@ public class SearchDstu2Test {
 		DummyPatientResourceProvider patientProvider = new DummyPatientResourceProvider();
 		DummyPatientResourceNoIdProvider patientResourceNoIdProviderProvider = new DummyPatientResourceNoIdProvider();
 		DummyPatientResourceMethodBindingIssueProvider patientResourceMethodBindingIssueProvider = new DummyPatientResourceMethodBindingIssueProvider();
+		DummyPatientResourceReverseChainingMethodBindingIssueProvider patientResourceReverseChainingMethodBindingIssueProvider = new DummyPatientResourceReverseChainingMethodBindingIssueProvider();
 
 		ServletHandler proxyHandler = new ServletHandler();
 		ourServlet = new RestfulServer(ourCtx);
 		ourServlet.setPagingProvider(new FifoMemoryPagingProvider(10));
 
-		ourServlet.setResourceProviders(patientResourceNoIdProviderProvider, patientProvider, patientResourceMethodBindingIssueProvider);
+		ourServlet.setResourceProviders(patientResourceNoIdProviderProvider, patientProvider, patientResourceMethodBindingIssueProvider, patientResourceReverseChainingMethodBindingIssueProvider);
 		ServletHolder servletHolder = new ServletHolder(ourServlet);
 		proxyHandler.addServletWithMapping(servletHolder, "/*");
 		ourServer.setHandler(proxyHandler);
@@ -581,6 +582,24 @@ public class SearchDstu2Test {
 			@RequiredParam(name = "searchMethodBindingIssue") StringParam stringParam,
 			@RequiredParam(name = Constants.PARAM_LASTUPDATED) DateRangeParam dateRangeParam) {
 			ourLastMethod = "searchMethodBindingIssueWithLastUpdated";
+			return Collections.emptyList();
+		}
+		//@formatter:on
+
+	}
+
+	public static class DummyPatientResourceReverseChainingMethodBindingIssueProvider implements IResourceProvider {
+
+		@Override
+		public Class<? extends IResource> getResourceType() {
+			return Patient.class;
+		}
+
+		//@formatter:off
+		@Search()
+		public List<Patient> searchMethodBindingIssue(
+			@RequiredParam(name = "searchMethodBindingIssue") StringParam stringParam) {
+			ourLastMethod = "searchMethodBindingIssueNoLastUpdated";
 			return Collections.emptyList();
 		}
 		//@formatter:on

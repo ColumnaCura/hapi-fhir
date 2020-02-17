@@ -523,14 +523,14 @@ public class SearchDstu2Test {
 
 		DummyPatientResourceProvider patientProvider = new DummyPatientResourceProvider();
 		DummyPatientResourceNoIdProvider patientResourceNoIdProviderProvider = new DummyPatientResourceNoIdProvider();
-		DummyPatientResourceMethodBindingIssueProvider patientResourceMethodBindingIssueProvider = new DummyPatientResourceMethodBindingIssueProvider();
+		DummyPatientResourceLastUpdatedBindingIssueProvider patientResourceLastUpdatedBindingIssueProvider = new DummyPatientResourceLastUpdatedBindingIssueProvider();
 		DummyPatientResourceReverseChainingMethodBindingIssueProvider patientResourceReverseChainingMethodBindingIssueProvider = new DummyPatientResourceReverseChainingMethodBindingIssueProvider();
 
 		ServletHandler proxyHandler = new ServletHandler();
 		ourServlet = new RestfulServer(ourCtx);
 		ourServlet.setPagingProvider(new FifoMemoryPagingProvider(10));
 
-		ourServlet.setResourceProviders(patientResourceNoIdProviderProvider, patientProvider, patientResourceMethodBindingIssueProvider, patientResourceReverseChainingMethodBindingIssueProvider);
+		ourServlet.setResourceProviders(patientResourceNoIdProviderProvider, patientProvider, patientResourceLastUpdatedBindingIssueProvider, patientResourceReverseChainingMethodBindingIssueProvider);
 		ServletHolder servletHolder = new ServletHolder(ourServlet);
 		proxyHandler.addServletWithMapping(servletHolder, "/*");
 		ourServer.setHandler(proxyHandler);
@@ -560,7 +560,7 @@ public class SearchDstu2Test {
 		//@formatter:on
 	}
 
-	public static class DummyPatientResourceMethodBindingIssueProvider implements IResourceProvider {
+	public static class DummyPatientResourceLastUpdatedBindingIssueProvider implements IResourceProvider {
 
 		@Override
 		public Class<? extends IResource> getResourceType() {

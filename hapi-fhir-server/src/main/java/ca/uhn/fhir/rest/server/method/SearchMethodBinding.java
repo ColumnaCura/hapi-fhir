@@ -62,6 +62,8 @@ public class SearchMethodBinding extends BaseResourceReturningMethodBinding {
 		HashSet<String> specialSearchParams = new HashSet<>();
 		specialSearchParams.add(IAnyResource.SP_RES_ID);
 		specialSearchParams.add(IAnyResource.SP_RES_LANGUAGE);
+		specialSearchParams.add(Constants.PARAM_LASTUPDATED);
+		specialSearchParams.add(Constants.PARAM_HAS);
 		SPECIAL_SEARCH_PARAMS = Collections.unmodifiableSet(specialSearchParams);
 	}
 
